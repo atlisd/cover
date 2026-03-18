@@ -1,0 +1,91 @@
+@if (_users is null)
+{
+    <div class="text-center py-3">
+        <div class="spinner-border spinner-border-sm"></div>
+    </div>
+}
+else
+{
+    <EditForm FormName="expense" Model="Model" OnValidSubmit="OnSubmit">
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <InputText class="form-control" @bind-Value="Model.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Amount (ISK)</label>
+            <InputNumber class="form-control" @bind-Value="Model.Amount" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Paid by</label>
+            <InputSelect class="form-select" @bind-Value="Model.PaidById">
+                @foreach (var user in _users)
+                {
+                    <option value="@user.Id">@user.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Split type</label>
+            <InputRadioGroup @bind-Value="Model.SplitType">
+                <div class="form-check">
+                    <InputRadio class="form-check-input" Value="SplitType.Equal" id="splitEqual" />
+                    <label class="form-check-label" for="splitEqual">Split equally (50/50)</label>
+                </div>
+                <div class="form-check">
+                    <InputRadio class="form-check-input" Value="SplitType.FullOther" id="splitFull" />
+                    <label class="form-check-label" for="splitFull">Owed by other (100%)</label>
+                </div>
+                <div class="form-check">
+                    <InputRadio class="form-check-input" Value="SplitType.NotShared" id="splitNone" />
+                    <label class="form-check-label" for="splitNone">Not shared (personal)</label>
+                </div>
+            </InputRadioGroup>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Date</label>
+            <InputDate class="form-control" @bind-Value="Model.Date" />
+        </div>
+
+        @if (Error is not null)
+        {
+            <div class="alert alert-danger">@Error</div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100" disabled="@Submitting">
+            @if (Submitting)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            @ButtonText
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter, EditorRequired] public ExpenseFormModel Model { get; set; } = null!;
+    [Parameter, EditorRequired] public EventCallback OnSubmit { get; set; }
+    [Parameter] public string ButtonText { get; set; } = "Save";
+    [Parameter] public bool Submitting { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter, EditorRequired] public List<UserDto>? Users { get; set; }
+
+    private List<UserDto>? _users;
+
+    protected override void OnParametersSet()
+    {
+        _users = Users;
+    }
+
+    public class ExpenseFormModel
+    {
+        public string Description { get; set; } = "";
+        public long Amount { get; set; }
+        public int PaidById { get; set; }
+        public SplitType SplitType { get; set; } = SplitType.Equal;
+        public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    }
+}

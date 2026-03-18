@@ -1,0 +1,58 @@
+@page "/add"
+@inject IApiClient Api
+@inject NavigationManager Nav
+
+<h4 class="mb-3">Add Expense</h4>
+
+<div class="row">
+    <div class="col-md-6">
+        <ExpenseForm Model="_model" OnSubmit="Submit" Users="_users"
+                     ButtonText="Add Expense" Submitting="_submitting" Error="@_error" />
+    </div>
+</div>
+
+@code {
+    private ExpenseForm.ExpenseFormModel _model = new();
+    private List<UserDto>? _users;
+    private bool _submitting;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _users = await Api.GetUsersAsync();
+        if (_users.Count > 0)
+            _model.PaidById = _users[0].Id;
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Description))
+        {
+            _error = "Description is required.";
+            return;
+        }
+        if (_model.Amount <= 0)
+        {
+            _error = "Amount must be positive.";
+            return;
+        }
+
+        _submitting = true;
+        _error = null;
+        try
+        {
+            await Api.CreateExpenseAsync(new CreateExpenseRequest(
+                _model.Description.Trim(), _model.Amount, _model.SplitType,
+                _model.PaidById, _model.Date));
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to add expense: {ex.Message}";
+            _submitting = false;
+            return;
+        }
+
+        _submitting = false;
+        Nav.NavigateTo("/");
+    }
+}

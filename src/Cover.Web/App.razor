@@ -1,0 +1,50 @@
+@inject IApiClient Api
+@inject NavigationManager Nav
+
+@if (!_loaded)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+}
+
+@code {
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var status = await Api.GetSetupStatusAsync();
+            _loaded = true;
+
+            if (!status.IsComplete)
+            {
+                Nav.NavigateTo("/setup");
+            }
+            else
+            {
+                var uri = Nav.Uri;
+                if (uri.Contains("/setup"))
+                {
+                    Nav.NavigateTo("/");
+                }
+            }
+        }
+        catch
+        {
+            _loaded = true;
+        }
+    }
+}

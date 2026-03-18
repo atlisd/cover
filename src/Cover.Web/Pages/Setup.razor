@@ -1,0 +1,74 @@
+@page "/setup"
+@inject IApiClient Api
+@inject NavigationManager Nav
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">Welcome to Cover</h3>
+                <p class="text-muted text-center">Enter the names of the two people sharing expenses.</p>
+
+                @if (_error is not null)
+                {
+                    <div class="alert alert-danger">@_error</div>
+                }
+
+                <EditForm FormName="setup" Model="_model" OnValidSubmit="Submit">
+                    <div class="mb-3">
+                        <label class="form-label">Person 1</label>
+                        <InputText class="form-control" @bind-Value="_model.Name1" placeholder="Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Person 2</label>
+                        <InputText class="form-control" @bind-Value="_model.Name2" placeholder="Name" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" disabled="@_submitting">
+                        @if (_submitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Get Started
+                    </button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private SetupModel _model = new();
+    private bool _submitting;
+    private string? _error;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Name1) || string.IsNullOrWhiteSpace(_model.Name2))
+        {
+            _error = "Both names are required.";
+            return;
+        }
+
+        _submitting = true;
+        _error = null;
+        try
+        {
+            await Api.SetupAsync(new SetupRequest(_model.Name1.Trim(), _model.Name2.Trim()));
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Setup failed: {ex.Message}";
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private class SetupModel
+    {
+        public string Name1 { get; set; } = "";
+        public string Name2 { get; set; } = "";
+    }
+}
