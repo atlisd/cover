@@ -8,13 +8,13 @@ else
 {
     <EditForm FormName="expense" Model="Model" OnValidSubmit="OnSubmit">
         <div class="mb-3">
-            <label class="form-label">Description</label>
-            <InputText class="form-control" @bind-Value="Model.Description" />
+            <label class="form-label">Amount (ISK)</label>
+            <InputNumber class="form-control" @bind-Value="Model.Amount" @ref="amountInput" />
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Amount (ISK)</label>
-            <InputNumber class="form-control" @bind-Value="Model.Amount" />
+            <label class="form-label">Description</label>
+            <InputText class="form-control" @bind-Value="Model.Description" />
         </div>
 
         <div class="mb-3">
@@ -70,16 +70,27 @@ else
     [Parameter, EditorRequired] public List<UserDto>? Users { get; set; }
 
     private List<UserDto>? _users;
+    private InputNumber<long?>? amountInput;
+    private bool _focused;
 
     protected override void OnParametersSet()
     {
         _users = Users;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focused && amountInput?.Element is not null)
+        {
+            _focused = true;
+            await amountInput.Element.Value.FocusAsync();
+        }
+    }
+
     public class ExpenseFormModel
     {
         public string Description { get; set; } = "";
-        public long Amount { get; set; }
+        public long? Amount { get; set; }
         public int PaidById { get; set; }
         public SplitType SplitType { get; set; } = SplitType.Equal;
         public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Today);

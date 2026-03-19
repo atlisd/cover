@@ -79,7 +79,7 @@ else
             _error = "Description is required.";
             return;
         }
-        if (_model.Amount <= 0)
+        if (_model.Amount is null or <= 0)
         {
             _error = "Amount must be positive.";
             return;
@@ -90,7 +90,7 @@ else
         try
         {
             await Api.UpdateExpenseAsync(Id, new UpdateExpenseRequest(
-                _model.Description.Trim(), _model.Amount, _model.SplitType,
+                _model.Description.Trim(), _model.Amount.Value, _model.SplitType,
                 _model.PaidById, _model.Date));
             Nav.NavigateTo("/");
         }
