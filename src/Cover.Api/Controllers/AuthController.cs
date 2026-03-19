@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Cover.Api.Data;
@@ -18,7 +19,7 @@ public class AuthController : ControllerBase
         p.Any(char.IsDigit) && p.Any(c => !char.IsLetterOrDigit(c));
 
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request)
     {
         var creds = await _db.AppCredentials.FirstOrDefaultAsync();
         if (creds is null)
@@ -39,32 +40,57 @@ public class AuthController : ControllerBase
 
         creds.FailedAttempts = 0;
         creds.LockoutEnd = null;
-        creds.SessionToken = Guid.NewGuid().ToString();
+        creds.SessionToken = GenerateToken();
         await _db.SaveChangesAsync();
 
-        return Ok(new LoginResponse(creds.SessionToken));
+        SetSessionCookie(creds.SessionToken);
+        return Ok();
     }
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        var token = Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "");
+        var token = Request.Cookies["session_token"];
         var creds = await _db.AppCredentials.FirstOrDefaultAsync();
         if (creds is not null && creds.SessionToken == token)
         {
             creds.SessionToken = null;
             await _db.SaveChangesAsync();
         }
+        DeleteSessionCookie();
         return Ok();
     }
 
     [HttpGet("status")]
     public async Task<IActionResult> Status()
     {
-        var token = Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "");
+        var token = Request.Cookies["session_token"];
         var creds = await _db.AppCredentials.FirstOrDefaultAsync();
         if (token is null || creds?.SessionToken != token)
             return Unauthorized();
         return Ok();
     }
+
+    private static string GenerateToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    }
+
+    private void SetSessionCookie(string token)
+    {
+        Response.Cookies.Append("session_token", token, GetCookieOptions());
+    }
+
+    private void DeleteSessionCookie()
+    {
+        Response.Cookies.Delete("session_token", GetCookieOptions());
+    }
+
+    private CookieOptions GetCookieOptions() => new()
+    {
+        HttpOnly = true,
+        Secure = Request.IsHttps,
+        SameSite = SameSiteMode.Strict,
+        Path = "/api"
+    };
 }

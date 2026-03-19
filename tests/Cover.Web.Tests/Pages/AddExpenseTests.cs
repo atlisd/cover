@@ -25,6 +25,8 @@ public class AddExpenseTests : TestContext
         _api.GetUsersAsync().Returns(FakeUsers);
         _api.GetMerchantsAsync(Arg.Any<string>()).Returns([]);
         Services.AddSingleton(_api);
+        JSInterop.Setup<string?>("localStorage.getItem", "lastPaidById").SetResult(null);
+        JSInterop.SetupVoid("localStorage.setItem", _ => true);
     }
 
     [Fact]

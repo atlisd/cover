@@ -18,6 +18,8 @@ public class ExpensesController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] int? paidById = null)
     {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
         return await _expenseService.GetAllAsync(page, pageSize, paidById);
     }
 

@@ -26,7 +26,6 @@ else
     {
         try
         {
-            await Api.InitializeAsync();
             var status = await Api.GetSetupStatusAsync();
 
             if (!status.IsComplete)

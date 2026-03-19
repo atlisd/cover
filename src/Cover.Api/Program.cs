@@ -1,3 +1,5 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Cover.Api.Data;
 using Cover.Api.Middleware;
@@ -19,10 +21,38 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IBalanceService, BalanceService>();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.WithOrigins("http://localhost:5008")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1)
+            }));
 });
 
 var app = builder.Build();
@@ -33,10 +63,12 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
+app.UseForwardedHeaders();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.MapOpenApi();
 app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Cover API"));
 app.UseCors();
+app.UseRateLimiter();
 
 app.Use(async (context, next) =>
 {
@@ -46,7 +78,7 @@ app.Use(async (context, next) =>
                  || !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase);
     if (!isPublic)
     {
-        var token = context.Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "");
+        var token = context.Request.Cookies["session_token"];
         var db = context.RequestServices.GetRequiredService<AppDbContext>();
         var creds = await db.AppCredentials.FirstOrDefaultAsync();
         if (token is null || creds?.SessionToken != token)

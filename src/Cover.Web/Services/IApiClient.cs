@@ -4,8 +4,7 @@ namespace Cover.Web.Services;
 
 public interface IApiClient
 {
-    Task InitializeAsync();
-    Task<LoginResponse> LoginAsync(LoginRequest request);
+    Task LoginAsync(LoginRequest request);
     Task LogoutAsync();
     Task<bool> GetAuthStatusAsync();
     Task<SetupStatusDto> GetSetupStatusAsync();

@@ -11,6 +11,9 @@ obj/
 ## Docker
 .docker/
 
+## Environment
+.env
+
 ## IDE
 .idea/
 .vscode/

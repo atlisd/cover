@@ -48,7 +48,7 @@
         try
         {
             await Api.LoginAsync(new LoginRequest(_model.Username, _model.Password));
-            Nav.NavigateTo("/");
+            Nav.NavigateTo("/", forceLoad: true);
         }
         catch (HttpRequestException ex) when ((int?)ex.StatusCode == 429)
         {
