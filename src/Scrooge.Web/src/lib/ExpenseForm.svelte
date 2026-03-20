@@ -69,7 +69,13 @@
 		// Set the hidden date input to the current model value so the picker opens on the right date
 		const iso = parseDisplayDate(model.date);
 		if (iso) datePickerInput.value = iso;
-		datePickerInput.showPicker();
+		// iOS Safari requires .focus() — showPicker() is not supported there
+		datePickerInput.focus();
+		try {
+			datePickerInput.showPicker();
+		} catch {
+			// showPicker not supported (iOS Safari) — focus() above is sufficient
+		}
 	}
 
 	function onDatePicked(e: Event) {
@@ -192,18 +198,20 @@
 				bind:value={model.date}
 				required
 			/>
-			<button type="button" class="btn btn-outline-secondary" onclick={openDatePicker} aria-label="Open calendar">
-				&#128197;
-			</button>
+			<div class="position-relative">
+				<button type="button" class="btn btn-outline-secondary" onclick={openDatePicker} aria-label="Open calendar">
+					&#128197;
+				</button>
+				<input
+					type="date"
+					bind:this={datePickerInput}
+					onchange={onDatePicked}
+					tabindex={-1}
+					aria-hidden="true"
+					style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;"
+				/>
+			</div>
 		</div>
-		<input
-			type="date"
-			class="visually-hidden"
-			bind:this={datePickerInput}
-			onchange={onDatePicked}
-			tabindex={-1}
-			aria-hidden="true"
-		/>
 	</div>
 
 	<button type="submit" class="btn btn-primary w-100" disabled={submitting}>
