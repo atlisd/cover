@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { getUsers, createExpense } from '$lib/api';
 	import { toMinorUnits, parseAmountInput, isoToDisplayDate, parseDisplayDate, todayString } from '$lib/currency';
+	import { getActiveUser } from '$lib/user';
 	import type { UserDto, SplitType } from '$lib/types';
 	import ExpenseForm from '$lib/ExpenseForm.svelte';
 
@@ -22,14 +23,9 @@
 
 	onMount(async () => {
 		users = await getUsers();
-		const lastPaidById = localStorage.getItem('lastPaidById');
-		if (lastPaidById) {
-			const id = parseInt(lastPaidById, 10);
-			if (users.some((u) => u.id === id)) {
-				model.paidById = id;
-			} else if (users.length > 0) {
-				model.paidById = users[0].id;
-			}
+		const activeUser = getActiveUser();
+		if (activeUser && users.some((u) => u.id === activeUser.id)) {
+			model.paidById = activeUser.id;
 		} else if (users.length > 0) {
 			model.paidById = users[0].id;
 		}
@@ -61,7 +57,6 @@
 				paidById: model.paidById,
 				date: isoDate
 			});
-			localStorage.setItem('lastPaidById', String(model.paidById));
 			await goto('/');
 		} catch (err: any) {
 			error = err.message || 'Failed to create expense.';
