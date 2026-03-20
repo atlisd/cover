@@ -1,73 +1,139 @@
-# Cover
+# Scrooge
 
 A simple expense-splitting app for two people. Track shared expenses, see who paid what, and know exactly who owes whom at any time.
 
 ## Stack
 
 - **Backend:** ASP.NET Core Web API (.NET 10), Entity Framework Core, PostgreSQL
-- **Frontend:** Blazor WebAssembly
-- **Containerization:** Docker + Docker Compose
+- **Frontend:** SvelteKit (static adapter, served by nginx)
+- **Images:** Published to GitHub Container Registry on every release
 
-## Getting started
+---
 
-### With Docker (recommended)
+## Deploy with Docker Compose
 
-1. Copy the example environment file and set a strong database password:
+No need to clone the repository. Just create two files on your Docker host.
 
-```bash
-cp .env.example .env
+### 1. Create a `.env` file
+
+```env
+POSTGRES_DB=splitclaude
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=CHANGE_ME_TO_A_STRONG_PASSWORD
 ```
 
-Edit `.env` and change `POSTGRES_PASSWORD` to a strong password. For local development the defaults are fine.
+> **Change `POSTGRES_PASSWORD` before starting.** Never use the default in production.
 
-2. Start the stack:
+### 2. Create a `docker-compose.yml` file
 
-```bash
-docker compose up --build
+```yaml
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/atlisd/scrooge-api:latest
+    ports:
+      - "5001:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/atlisd/scrooge-web:latest
+    ports:
+      - "5002:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
 ```
 
-- Web: http://localhost:5002
-- API: http://localhost:5001
-- Swagger: http://localhost:5001/swagger
-
-### Local development
-
-Requires .NET 10 SDK and a PostgreSQL instance at `localhost:5432` with database `splitclaude`, user `postgres`, password `postgres` (configured in `appsettings.Development.json`).
+### 3. Start the stack
 
 ```bash
-# Run the API
-dotnet run --project src/Cover.Api
-
-# Run the frontend (separate terminal)
-dotnet run --project src/Cover.Web
+docker compose up -d
 ```
 
-- API: http://localhost:5169
-- Web: http://localhost:5008
+Docker will pull the images from GitHub Container Registry and start all three services. The API migrates the database automatically on first boot.
 
-> **Note:** Running outside Docker means the frontend and API are on different ports. Authentication uses httpOnly cookies which work automatically in the Docker setup (same-origin via nginx). For bare-metal local dev, use the Docker setup for the most reliable experience.
+### Access the app
 
-## Production deployment
+| | URL |
+|-|-----|
+| Web UI | http://your-host:5002 |
+| API | http://your-host:5001 |
+| Swagger | http://your-host:5001/swagger |
 
-The app is designed to run behind a reverse proxy (e.g. Nginx Proxy Manager) that handles SSL termination.
+On first launch you will be prompted to enter two names to set up the app. This is a one-time step.
 
-1. Set a strong `POSTGRES_PASSWORD` in your `.env` file
-2. Run `docker compose up -d`
-3. Point your reverse proxy to the `web` container on port 5002 (or adjust the published port in `docker-compose.yml`)
-4. Configure SSL in your reverse proxy (e.g. Let's Encrypt via Nginx Proxy Manager)
+---
 
-The API sets `Secure` cookies in production, so HTTPS is required.
+## Updating to a new version
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Database migrations run automatically on API startup.
+
+## Stopping
+
+```bash
+# Stop without losing data
+docker compose down
+
+# Stop and delete all data (irreversible)
+docker compose down -v
+```
+
+---
+
+## Production setup (HTTPS)
+
+The app is designed to run behind a reverse proxy that handles SSL termination. The API sets `Secure` + `HttpOnly` cookies, so **HTTPS is required** — without it the browser will not send auth cookies.
+
+### Example: Nginx Proxy Manager
+
+1. In Nginx Proxy Manager, add a new **Proxy Host**
+2. Forward it to `<docker-host-ip>:5002`
+3. Enable SSL and issue a Let's Encrypt certificate
+4. Done — no changes to `docker-compose.yml` needed
+
+You can also expose only port `5002` and keep the API internal if you don't need direct API access from outside the host.
+
+---
 
 ## How it works
 
-On first launch you enter two names. From then on you can log expenses, choosing who paid and how the expense is split:
-
 | Split type | Effect on balance |
-|---|---|
+|------------|-------------------|
 | **Equal** | Payer is owed 50% by the other person |
 | **Owed by other** | Payer is owed 100% by the other person |
+| **Not shared** | Personal expense, no effect on balance |
 
-The dashboard shows the current balance and recent expenses. The history page lets you filter and paginate through all expenses.
+Amounts are stored as integer cents/øre — no floating-point rounding issues.
+
+---
 
 ## License
 
