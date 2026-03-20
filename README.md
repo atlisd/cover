@@ -87,6 +87,42 @@ On first launch you will be prompted to enter two names to set up the app. This 
 
 ---
 
+## Backup & Restore
+
+These scripts require the `backup.sh` and `restore.sh` files from the repository. Download them to the same directory as your `docker-compose.yml` and make them executable:
+
+```bash
+chmod +x backup.sh restore.sh
+```
+
+### Backup
+
+```bash
+./backup.sh
+```
+
+Creates a timestamped file (`scrooge_YYYYMMDD-HHMM.bck`) in the current directory. Pass a filename to choose the destination:
+
+```bash
+./backup.sh /path/to/my-backup.bck
+```
+
+### Restore
+
+```bash
+./restore.sh scrooge_YYYYMMDD-HHMM.bck
+```
+
+You will be prompted to confirm before any data is overwritten. To restore non-interactively (e.g. from a script):
+
+```bash
+echo y | ./restore.sh scrooge_YYYYMMDD-HHMM.bck
+```
+
+Both scripts read credentials from the `.env` file automatically.
+
+---
+
 ## Updating to a new version
 
 ```bash
