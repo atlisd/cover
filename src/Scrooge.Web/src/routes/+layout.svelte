@@ -16,13 +16,11 @@
 			setCurrency(status.currencyCode, status.currencyDecimals);
 
 			if (!status.isComplete) {
-				loaded = true;
 				await goto('/setup');
 				return;
 			}
 
 			const authenticated = await getAuthStatus();
-			loaded = true;
 
 			if (!authenticated) {
 				await goto('/login');
@@ -34,6 +32,8 @@
 				await goto('/');
 			}
 		} catch {
+			// fall through to finally
+		} finally {
 			loaded = true;
 		}
 	});
