@@ -19,6 +19,7 @@
 		submitting = false,
 		error = null,
 		showDescription = true,
+		collapsibleMore = false,
 		onSubmit
 	}: {
 		model: ExpenseFormModel;
@@ -27,8 +28,11 @@
 		submitting?: boolean;
 		error?: string | null;
 		showDescription?: boolean;
+		collapsibleMore?: boolean;
 		onSubmit: () => void;
 	} = $props();
+
+	let showMore = $state(false);
 
 	let merchants = $state<string[]>([]);
 	let showMerchants = $state(false);
@@ -157,68 +161,82 @@
 		</div>
 	{/if}
 
-	<div class="mb-3">
-		<label for="paidBy" class="form-label">Paid by</label>
-		<select id="paidBy" class="form-select" bind:value={model.paidById}>
-			{#each users as user}
-				<option value={user.id}>{user.name}</option>
-			{/each}
-		</select>
-	</div>
+	{#if collapsibleMore}
+		<div class="mb-3">
+			<button
+				type="button"
+				class="btn btn-link p-0 text-decoration-none text-secondary"
+				onclick={() => (showMore = !showMore)}
+			>
+				{showMore ? '▲' : '▼'} More options
+			</button>
+		</div>
+	{/if}
 
-	<div class="mb-3">
-		<span class="form-label d-block">Split</span>
-		<div>
-			<div class="form-check form-check-inline">
-				<input
-					class="form-check-input"
-					type="radio"
-					id="splitEqual"
-					value="Equal"
-					bind:group={model.splitType}
-				/>
-				<label class="form-check-label" for="splitEqual">50/50</label>
-			</div>
-			<div class="form-check form-check-inline">
-				<input
-					class="form-check-input"
-					type="radio"
-					id="splitFull"
-					value="FullOther"
-					bind:group={model.splitType}
-				/>
-				<label class="form-check-label" for="splitFull">100% other</label>
+	{#if !collapsibleMore || showMore}
+		<div class="mb-3">
+			<label for="paidBy" class="form-label">Paid by</label>
+			<select id="paidBy" class="form-select" bind:value={model.paidById}>
+				{#each users as user}
+					<option value={user.id}>{user.name}</option>
+				{/each}
+			</select>
+		</div>
+
+		<div class="mb-3">
+			<span class="form-label d-block">Split</span>
+			<div>
+				<div class="form-check form-check-inline">
+					<input
+						class="form-check-input"
+						type="radio"
+						id="splitEqual"
+						value="Equal"
+						bind:group={model.splitType}
+					/>
+					<label class="form-check-label" for="splitEqual">50/50</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input
+						class="form-check-input"
+						type="radio"
+						id="splitFull"
+						value="FullOther"
+						bind:group={model.splitType}
+					/>
+					<label class="form-check-label" for="splitFull">100% other</label>
+				</div>
 			</div>
 		</div>
-	</div>
 
-	<div class="mb-3">
-		<label for="date" class="form-label">Date</label>
-		<div class="input-group">
-			<input
-				id="date"
-				type="text"
-				inputmode="numeric"
-				class="form-control"
-				placeholder={getDateFormatHint()}
-				bind:value={model.date}
-				required
-			/>
-			<div class="position-relative">
-				<button type="button" class="btn btn-outline-secondary" onclick={openDatePicker} aria-label="Open calendar">
-					&#128197;
-				</button>
+		<div class="mb-3">
+			<label for="date" class="form-label">Date</label>
+			<div class="input-group">
 				<input
-					type="date"
-					bind:this={datePickerInput}
-					onchange={onDatePicked}
-					tabindex={-1}
-					aria-hidden="true"
-					style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;"
+					id="date"
+					type="text"
+					inputmode="numeric"
+					class="form-control"
+					placeholder={getDateFormatHint()}
+					bind:value={model.date}
+					required
 				/>
+				<div class="position-relative">
+					<button type="button" class="btn btn-outline-secondary" onclick={openDatePicker} aria-label="Open calendar">
+						&#128197;
+					</button>
+					<input
+						type="date"
+						bind:this={datePickerInput}
+						onchange={onDatePicked}
+						tabindex={-1}
+						aria-hidden="true"
+						style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;"
+					/>
+				</div>
 			</div>
 		</div>
-	</div>
+	{/if}
 
 	<button type="submit" class="btn btn-primary w-100" disabled={submitting}>
 		{#if submitting}

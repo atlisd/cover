@@ -12,6 +12,8 @@
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
 
+	let payerName = $derived(users.find((u) => u.id === model.paidById)?.name ?? '');
+
 	let model = $state({
 		merchant: '',
 		description: '',
@@ -66,7 +68,7 @@
 	}
 </script>
 
-<h4 class="mb-3">Add Expense</h4>
+<h4 class="mb-3">Add Expense{payerName ? ` for ${payerName}` : ''}</h4>
 
 {#if loading}
 	<div class="text-center py-4">
@@ -82,6 +84,7 @@
 		{submitting}
 		{error}
 		showDescription={false}
+		collapsibleMore={true}
 		onSubmit={handleSubmit}
 	/>
 {/if}
