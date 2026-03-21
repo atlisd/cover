@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { getUsers, getExpense, updateExpense, deleteExpense } from '$lib/api';
 	import { toMinorUnits, formatDisplayValue, parseAmountInput, isoToDisplayDate, parseDisplayDate } from '$lib/currency';
+	import { getActiveUser } from '$lib/user';
 	import type { UserDto, SplitType } from '$lib/types';
 	import ExpenseForm from '$lib/ExpenseForm.svelte';
 
@@ -27,8 +28,11 @@
 	let expenseId = $derived(parseInt($page.params.id, 10));
 
 	onMount(async () => {
-		const [u, exp] = await Promise.all([getUsers(), getExpense(expenseId)]);
-		users = u;
+		const [fetched, exp] = await Promise.all([getUsers(), getExpense(expenseId)]);
+		const activeUser = getActiveUser();
+		users = activeUser
+			? [...fetched.filter((u) => u.id === activeUser.id), ...fetched.filter((u) => u.id !== activeUser.id)]
+			: fetched;
 
 		if (!exp) {
 			notFound = true;

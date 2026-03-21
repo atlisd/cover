@@ -24,12 +24,17 @@
 	});
 
 	onMount(async () => {
-		users = await getUsers();
+		const fetched = await getUsers();
 		const activeUser = getActiveUser();
-		if (activeUser && users.some((u) => u.id === activeUser.id)) {
+		if (activeUser) {
+			users = [
+				...fetched.filter((u) => u.id === activeUser.id),
+				...fetched.filter((u) => u.id !== activeUser.id)
+			];
 			model.paidById = activeUser.id;
-		} else if (users.length > 0) {
-			model.paidById = users[0].id;
+		} else {
+			users = fetched;
+			if (fetched.length > 0) model.paidById = fetched[0].id;
 		}
 		loading = false;
 	});

@@ -175,12 +175,21 @@
 
 	{#if !collapsibleMore || showMore}
 		<div class="mb-3">
-			<label for="paidBy" class="form-label">Paid by</label>
-			<select id="paidBy" class="form-select" bind:value={model.paidById}>
+			<span class="form-label d-block">Paid by</span>
+			<div>
 				{#each users as user}
-					<option value={user.id}>{user.name}</option>
+					<div class="form-check form-check-inline">
+						<input
+							class="form-check-input"
+							type="radio"
+							id="paidBy_{user.id}"
+							value={user.id}
+							bind:group={model.paidById}
+						/>
+						<label class="form-check-label" for="paidBy_{user.id}">{user.name}</label>
+					</div>
 				{/each}
-			</select>
+			</div>
 		</div>
 
 		<div class="mb-3">
