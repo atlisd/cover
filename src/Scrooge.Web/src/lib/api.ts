@@ -103,6 +103,10 @@ export async function getUsers(): Promise<UserDto[]> {
 	return request<UserDto[]>('/api/users');
 }
 
+export async function getPublicUsers(): Promise<UserDto[]> {
+	return request<UserDto[]>('/api/setup/users');
+}
+
 export async function getBalance(): Promise<BalanceDto | null> {
 	try {
 		return await request<BalanceDto>('/api/balance');

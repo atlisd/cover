@@ -20,6 +20,10 @@ public class SetupController : ControllerBase
         _db = db;
     }
 
+    [HttpGet("users")]
+    public async Task<List<UserDto>> GetUsers() =>
+        await _userService.GetAllAsync();
+
     [HttpGet("status")]
     public async Task<SetupStatusDto> GetStatus()
     {

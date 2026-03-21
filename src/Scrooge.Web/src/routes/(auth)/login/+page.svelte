@@ -1,16 +1,30 @@
 <script lang="ts">
-	import { login } from '$lib/api';
-	import { getCachedUsers, setActiveUser } from '$lib/user';
+	import { onMount } from 'svelte';
+	import { login, getPublicUsers } from '$lib/api';
+	import { getCachedUsers, setActiveUser, initUsers } from '$lib/user';
 
 	let username = $state('');
 	let password = $state('');
 	let error = $state('');
 	let submitting = $state(false);
 
-	let cachedUsers = getCachedUsers();
+	let cachedUsers = $state(getCachedUsers());
 	let selectedUserId = $state<number | null>(
 		parseInt(localStorage.getItem('activeUserId') || '') || cachedUsers[0]?.id || null
 	);
+
+	onMount(async () => {
+		if (cachedUsers.length === 0) {
+			try {
+				const users = await getPublicUsers();
+				initUsers(users);
+				cachedUsers = getCachedUsers();
+				selectedUserId = parseInt(localStorage.getItem('activeUserId') || '') || cachedUsers[0]?.id || null;
+			} catch {
+				// silently ignore — picker just won't show
+			}
+		}
+	});
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
