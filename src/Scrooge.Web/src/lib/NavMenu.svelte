@@ -21,9 +21,6 @@
 					<a class="nav-link" class:active={pathname === '/'} href="/">Dashboard</a>
 				</li>
 				<li class="nav-item">
-					<a class="nav-link" class:active={pathname === '/add'} href="/add">Add Expense</a>
-				</li>
-				<li class="nav-item">
 					<a class="nav-link" class:active={pathname === '/history'} href="/history">History</a>
 				</li>
 				<li class="nav-item">
