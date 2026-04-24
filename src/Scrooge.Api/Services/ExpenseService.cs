@@ -103,9 +103,9 @@ public class ExpenseService : IExpenseService
     public async Task<List<string>> GetMerchantsAsync(string query)
         => await _db.Expenses
             .Where(e => e.Merchant != null && EF.Functions.ILike(e.Merchant, $"{query}%"))
-            .Select(e => e.Merchant!)
-            .Distinct()
-            .OrderBy(m => m)
+            .GroupBy(e => e.Merchant!)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
             .Take(10)
             .ToListAsync();
 }
