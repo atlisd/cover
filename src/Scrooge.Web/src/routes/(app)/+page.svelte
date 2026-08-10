@@ -70,6 +70,12 @@
 		if (inited) loadData();
 	});
 
+	function dismissNotify() {
+		if (successTimeout) clearTimeout(successTimeout);
+		successVisible = false;
+		successTimeout = setTimeout(() => (successMessage = null), 400);
+	}
+
 	async function handleSubmit() {
 		const parsedAmount = parseAmountInput(model.amount);
 		if (parsedAmount === null) {
@@ -169,7 +175,14 @@
 {/if}
 
 {#if successMessage}
-	<div class="notify-overlay" class:notify-visible={successVisible}>
+	<div
+		class="notify-overlay"
+		class:notify-visible={successVisible}
+		role="button"
+		tabindex="0"
+		onclick={dismissNotify}
+		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && dismissNotify()}
+	>
 		<div class="notify-card">
 			{#if successPayer}
 				<div class="notify-payer">{successPayer} Payed</div>
@@ -195,6 +208,8 @@
 
 	.notify-visible {
 		opacity: 1;
+		pointer-events: auto;
+		cursor: pointer;
 	}
 
 	.notify-card {
